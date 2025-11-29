@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+websockets
+deepgram-sdk
+langchain
+langchain-groq
+langchain-core
+edge-tts
+python-dotenv

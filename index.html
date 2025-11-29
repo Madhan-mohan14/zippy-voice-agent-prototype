@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zippy Story Adventure</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Comic Sans MS', 'Fredoka One', sans-serif; /* Playful font */
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        /* THE PINK ORB */
+        .orb {
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle at 30% 30%, #ffb7b2, #ff9aa2);
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            box-shadow: 0 0 30px rgba(255, 154, 162, 0.6);
+            transition: all 0.5s ease;
+        }
+
+        /* Animation: Breathing (Speaking) */
+        .orb.speaking {
+            animation: breathe 1.5s infinite ease-in-out;
+            box-shadow: 0 0 50px rgba(255, 154, 162, 0.9);
+        }
+
+        /* Animation: Waving/Listening (User Turn) */
+        .orb.listening {
+            animation: wave 1s infinite linear;
+            background: radial-gradient(circle at 30% 30%, #ff9aa2, #ff6f91);
+            border: 4px solid #fff;
+        }
+
+        @keyframes breathe {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes wave {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 111, 145, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 30px rgba(255, 111, 145, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 111, 145, 0); }
+        }
+
+        .status-box {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        #zippy-text {
+            font-size: 1.2rem;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        #user-text {
+            font-size: 1rem;
+            color: #ff6f91;
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        .start-btn {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            background-color: #ff9aa2;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 154, 162, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            background-color: #ff858f;
+        }
+        
+        .hidden { display: none; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="orb" class="orb"></div>
+        
+        <div class="status-box">
+            <div id="zippy-text">Press Start to meet Zippy...</div>
+            <div id="user-text"></div>
+        </div>
+
+        <button id="start-btn" class="start-btn" onclick="startAdventure()">Start Adventure</button>
+    </div>
+
+    <script>
+        const orb = document.getElementById('orb');
+        const zippyText = document.getElementById('zippy-text');
+        const userText = document.getElementById('user-text');
+        const startBtn = document.getElementById('start-btn');
+        
+        // Load the magic sound effect
+        const magicSound = new Audio('/static/shine-magic-sound-4-sounds-190258.mp3');
+        let audioPlayer = new Audio();
+
+        // Variables for recording
+        let mediaRecorder;
+        let audioChunks = [];
+        const BACKEND_URL = "http://127.0.0.1:8000";
+
+        async function startAdventure() {
+            startBtn.classList.add('hidden');
+            zippyText.innerText = "Summoning Zippy...";
+            
+            // 1. Play Magic Sound
+            try { await magicSound.play(); } catch(e) { console.log("Audio play error", e); }
+
+            // 2. Call Server to Start Story
+            try {
+                const response = await fetch(`${BACKEND_URL}/start`, { method: "POST" });
+                const data = await response.json();
+                
+                // 3. Play Intro Audio
+                playZippyAudio(data.text, data.audio_url, true); // true = start listening after
+            } catch (error) {
+                zippyText.innerText = "Error connecting to Zippy :(";
+                console.error(error);
+            }
+        }
+
+        function playZippyAudio(text, audioUrl, listenAfter) {
+            zippyText.innerText = text;
+            userText.innerText = "";
+            
+            orb.classList.add('speaking');
+            audioPlayer.src = BACKEND_URL + audioUrl;
+            audioPlayer.play();
+
+            audioPlayer.onended = () => {
+                orb.classList.remove('speaking');
+                if (listenAfter) {
+                    startListening();
+                }
+            };
+        }
+
+        async function startListening() {
+            zippyText.innerText = "Zippy is listening...";
+            orb.classList.add('listening');
+
+            // Access Microphone
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.start();
+
+            // Record for 4 seconds (Simulating listening window)
+            setTimeout(() => {
+                stopListeningAndSend();
+            }, 4000); 
+        }
+
+        async function stopListeningAndSend() {
+            mediaRecorder.stop();
+            orb.classList.remove('listening');
+            zippyText.innerText = "Thinking...";
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const formData = new FormData();
+                formData.append("file", audioBlob, "voice.webm");
+
+                try {
+                    const response = await fetch(`${BACKEND_URL}/process_audio`, {
+                        method: "POST",
+                        body: formData
+                    });
+                    const data = await response.json();
+
+                    // Display what user said
+                    userText.innerText = `You said: "${data.user_said}"`;
+                    
+                    // Play response
+                    if (data.is_finished) {
+                        playZippyAudio(data.text, data.audio_url, false); // false = end of story
+                        setTimeout(() => { startBtn.classList.remove('hidden'); startBtn.innerText="Play Again"; }, 5000);
+                    } else {
+                        playZippyAudio(data.text, data.audio_url, true);
+                    }
+
+                } catch (error) {
+                    console.error("Error processing audio", error);
+                    zippyText.innerText = "Zippy couldn't hear you clearly.";
+                }
+            };
+        }
+    </script>
+</body>
+</html>

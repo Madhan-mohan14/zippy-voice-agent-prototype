@@ -21,7 +21,7 @@ The system follows a high-performance **Request-Response** architecture designed
 
 ```mermaid
 graph TD
-    A[User/Browser] -->|Microphone Input (Blob)| B(FastAPI Backend)
+    A[User/Browser] -->|Microphone-Input(Blob)| B(FastAPI-Backend)
     B -->|Raw Audio| C[Deepgram Nova-2 API]
     C -->|Transcript| D[LangChain + Groq (Llama-3)]
     
@@ -36,12 +36,19 @@ graph TD
 ---
 ## 🛠️ Tech Stack
 I chose these specific tools to optimize for latency (speed) and accent recognition (Indian context).
+
 Backend Framework: FastAPI (Async Python) for handling concurrent audio requests.
+
 ASR (The Ear): Deepgram Nova-2. Chosen for its sub-300ms latency and superior handling of Indian/Hinglish accents compared to Whisper.
+
 LLM (The Brain): Llama-3 8B running on Groq LPUs. This provides near-instant inference (500+ tokens/sec), eliminating the "awkward pause" standard GPT models have.
+
 Orchestration: LangChain. Used to strictly structure the "System Prompt" so the AI behaves as a Story Engine, not a chatbot.
+
 TTS (The Voice): Edge-TTS. Provides high-quality neural voices with zero cost for the prototype.
+
 Frontend: Vanilla JavaScript + CSS Animations (Visual feedback for Listening/Speaking states).
+
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/273d2daf-c312-4c86-a8dd-ce016505dc72" />
 
 ---
@@ -80,31 +87,36 @@ Open your browser and navigate to: http://127.0.0.1:8000
 ## 🔮 Future Improvements (Roadmap to Production)
 
 While this prototype uses HTTP/REST for stability, a production version for Zippy would implement the following architecture upgrades:
+
 ### WebSockets for Full-Duplex Streaming
 Current: Records full sentence -> Uploads -> Processes.
 Upgrade: Switch to WebSockets. Audio chunks are streamed to the server while the child is speaking. This reduces latency to near-zero.
+
 ### "Barge-In" (Interruption Handling)
 Feature: Children often interrupt stories.
 Implementation: Using VAD (Voice Activity Detection) over WebSockets. If the child speaks while the AI is talking, the server immediately sends a "Stop Audio" signal to the frontend, making the interaction feel natural.
+
 ### Redis for State Management
 Current: State is stored in Python memory (self.step).
 Upgrade: Use Redis to store session states (session_id: step_number). This allows the server to scale horizontally (Kubernetes) and handle thousands of concurrent users without mixing up stories.
+
 ### AWS S3 for Audio Assets
 Current: Audio is saved to local disk.
 Upgrade: Stream audio bytes directly to the client (no disk write) or cache common story segments in an S3 Bucket behind a CDN (CloudFront) to reduce TTS costs and load times.
+
 ### Vector Database (Long-Term Memory)
 Feature: Remembering the child's name and favorite characters.
 Implementation: Use Pinecone or Qdrant.
 Scenario: Child says "I like dragons."
 Action: Store embedding.
 Next Session: AI generates a story about "Tim the Dragon Hunter" automatically.
+---
 ## For mp.3
+
 Download shine-magic-sound-4-sounds-190258.mp3 from pixabay.com and place it in root folder 
+
 You can download any intro music but make sure to change in file 
 
-## License
-
-## ⚖️ License & Usage
 
 ## ⚖️ License
 

@@ -19,7 +19,7 @@ This project is a Proof of Concept (PoC) for an AI-powered audio player. It tell
 
 The system follows a high-performance **Request-Response** architecture designed for speed.
 
-graph TD
+    graph TD
 
     %% CLIENT SIDE
     User([User Speaks]) -->|Audio| Mic[Microphone]

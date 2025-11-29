@@ -19,21 +19,38 @@ This project is a Proof of Concept (PoC) for an AI-powered audio player. It tell
 
 The system follows a high-performance **Request-Response** architecture designed for speed.
 
-```mermaid
 graph TD
-    A[User/Browser] -->|Microphone-Input-(Blob)| B(FastAPI-Backend)
-    B -->|Raw Audio| C[Deepgram Nova-2 API]
-    C -->|Transcript| D[LangChain + Groq (Llama-3)]
+
+    %% CLIENT SIDE
+    User([User Speaks]) -->|Audio| Mic[Microphone]
+    Mic -->|WebM Blob| Converter[JS Converter]
+    Converter -->|WAV ArrayBuffer| WSSend(WebSocket Send)
     
-    D -->|Semantic Analysis| E{Is Honest?}
-    E -->|Yes| F[Generate Happy Ending Text]
-    E -->|No| G[Generate Lesson Text]
+    %% SERVER SIDE
+    subgraph Server [FastAPI Backend]
+        WSSend -->|Binary| API[Server Endpoint]
+        API -->|Audio| STT[Deepgram STT]
+        STT -->|Transcript| Brain[Groq LLM Logic]
+        Brain -->|Response Text| TTS[Edge TTS]
+        TTS -->|Audio Bytes| WSResp(WebSocket Response)
+    end
     
-    F & G -->|Text| H[Edge-TTS Engine]
-    H -->|MP3 File| I[Static File Server]
-    I -->|Audio URL| A
-```
----
+    %% SYNC LOGIC
+    WSResp -->|1. Text JSON| UI[Update UI Text]
+    WSResp -->|2. Audio Binary| Player[Audio Context]
+    WSResp -->|3. State JSON| Queue[("Pending Action Queue")]
+    
+    %% THE FIX
+    Player -->|Play Audio| Spk([Speaker])
+    Spk -.->|Event: onEnded| Sync[Sync Handler]
+    
+    Sync -->|Read Queue| Queue
+    Queue -->|Instruction: Listen| Mic
+    Queue -->|Instruction: Finish| Reset([Show Play Again])
+
+    style Queue fill:#f9f,stroke:#333,stroke-width:2px,color:black
+    style Sync fill:#ff9a9e,stroke:#333,stroke-width:2px,color:black
+
 ## 🛠️ Tech Stack
 I chose these specific tools to optimize for latency (speed) and accent recognition (Indian context).
 
@@ -123,6 +140,7 @@ Scenario: Child says "I like dragons."
 Action: Store embedding.
 
 Next Session: AI generates a story about "Tim the Dragon Hunter" automatically.
+
 ---
 ## For mp.3
 

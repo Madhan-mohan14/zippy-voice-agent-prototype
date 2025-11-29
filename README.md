@@ -22,33 +22,31 @@ The system follows a high-performance **Request-Response** architecture designed
 graph TD
     %% CLIENT SIDE
     User([User Speaks]) -->|Audio| Mic[Microphone]
-    Mic -->|WebM Blob| Converter[JS Converter]
-    Converter -->|WAV ArrayBuffer| WSSend(WebSocket Send)
+    Mic -->|MediaRecorder API| Blob[WebM Blob]
+    Blob -->|HTTP POST /process_audio| ServerBox(FastAPI Server)
     
     %% SERVER SIDE
     subgraph Server [FastAPI Backend]
-        WSSend -->|Binary| API[Server Endpoint]
-        API -->|Audio| STT[Deepgram STT]
-        STT -->|Transcript| Brain[Groq LLM Logic]
-        Brain -->|Response Text| TTS[Edge TTS]
-        TTS -->|Audio Bytes| WSResp(WebSocket Response)
+        ServerBox -->|Raw Bytes| ASR[Deepgram Nova-2]
+        ASR -->|Transcript Text| LLM[Groq Llama-3]
+        LLM -->|Decision Logic| Agent{Is Honest?}
+        Agent -->|Response Text| TTS[Edge TTS]
+        TTS -->|MP3 File| Disk[Static File Store]
+        Disk -->|Audio URL| Response(JSON Response)
     end
     
     %% SYNC LOGIC
-    WSResp -->|1. Text JSON| UI[Update UI Text]
-    WSResp -->|2. Audio Binary| Player[Audio Context]
-    WSResp -->|3. State JSON| Queue[("Pending Action Queue")]
-    
-    %% THE FIX
+    Response -->|1. Returns JSON| Browser[Browser UI]
+    Browser -->|2. Fetch MP3| Player[Audio Player]
     Player -->|Play Audio| Spk([Speaker])
-    Spk -.->|Event: onEnded| Sync[Sync Handler]
     
-    Sync -->|Read Queue| Queue
-    Queue -->|Instruction: Listen| Mic
-    Queue -->|Instruction: Finish| Reset([Show Play Again])
+    %% THE LOOP
+    Spk -.->|Event: onEnded| Logic{Story Finished?}
+    Logic -->|No| Mic
+    Logic -->|Yes| Reset([End / Replay])
 
-    style Queue fill:#f9f,stroke:#333,stroke-width:2px,color:black
-    style Sync fill:#ff9a9e,stroke:#333,stroke-width:2px,color:black
+    style Server fill:#f9f,stroke:#333,stroke-width:2px,color:black
+    style Agent fill:#ff9a9e,stroke:#333,stroke-width:2px,color:black
 ```
 
 ---
@@ -111,7 +109,7 @@ While this prototype uses HTTP/REST for stability, a production version for Zipp
 
 Current: Records full sentence -> Uploads -> Processes.
 
-Upgrade: Switch to WebSockets. Audio chunks are streamed to the server while the child is speaking. This reduces latency to near-zero.
+Upgrade: Switch to WebSockets. Audio chunks are streamed to the server while the child is speaking. This reduces latency to near-zero and it can stop also .
 
 ### "Barge-In" (Interruption Handling)
 

@@ -21,7 +21,7 @@ The system follows a high-performance **Request-Response** architecture designed
 
 ```mermaid
 graph TD
-    A[User/Browser] -->|Microphone-Input(Blob)| B(FastAPI-Backend)
+    A[User/Browser] -->|Microphone-Input-(Blob)| B(FastAPI-Backend)
     B -->|Raw Audio| C[Deepgram Nova-2 API]
     C -->|Transcript| D[LangChain + Groq (Llama-3)]
     
@@ -89,26 +89,39 @@ Open your browser and navigate to: http://127.0.0.1:8000
 While this prototype uses HTTP/REST for stability, a production version for Zippy would implement the following architecture upgrades:
 
 ### WebSockets for Full-Duplex Streaming
+
 Current: Records full sentence -> Uploads -> Processes.
+
 Upgrade: Switch to WebSockets. Audio chunks are streamed to the server while the child is speaking. This reduces latency to near-zero.
 
 ### "Barge-In" (Interruption Handling)
+
 Feature: Children often interrupt stories.
+
 Implementation: Using VAD (Voice Activity Detection) over WebSockets. If the child speaks while the AI is talking, the server immediately sends a "Stop Audio" signal to the frontend, making the interaction feel natural.
 
 ### Redis for State Management
+
 Current: State is stored in Python memory (self.step).
+
 Upgrade: Use Redis to store session states (session_id: step_number). This allows the server to scale horizontally (Kubernetes) and handle thousands of concurrent users without mixing up stories.
 
 ### AWS S3 for Audio Assets
+
 Current: Audio is saved to local disk.
+
 Upgrade: Stream audio bytes directly to the client (no disk write) or cache common story segments in an S3 Bucket behind a CDN (CloudFront) to reduce TTS costs and load times.
 
 ### Vector Database (Long-Term Memory)
+
 Feature: Remembering the child's name and favorite characters.
+
 Implementation: Use Pinecone or Qdrant.
+
 Scenario: Child says "I like dragons."
+
 Action: Store embedding.
+
 Next Session: AI generates a story about "Tim the Dragon Hunter" automatically.
 ---
 ## For mp.3
@@ -120,9 +133,9 @@ You can download any intro music but make sure to change in file
 
 ## ⚖️ License
 
-**© 2025 Madhan Mohan. All Rights Reserved.**
-
+@2025 Madhan Mohan. All Rights Reserved.
 This project was built as a personal portfolio piece. 
 You are welcome to view and evaluate the code, but commercial use or redistribution without permission is not allowed.
+
 ---
 Built with ❤️ and Python.

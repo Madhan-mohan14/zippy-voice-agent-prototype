@@ -19,8 +19,7 @@ This project is a Proof of Concept (PoC) for an AI-powered audio player. It tell
 
 The system follows a high-performance **Request-Response** architecture designed for speed.
 
-    graph TD
-
+graph TD
     %% CLIENT SIDE
     User([User Speaks]) -->|Audio| Mic[Microphone]
     Mic -->|WebM Blob| Converter[JS Converter]
@@ -50,6 +49,7 @@ The system follows a high-performance **Request-Response** architecture designed
 
     style Queue fill:#f9f,stroke:#333,stroke-width:2px,color:black
     style Sync fill:#ff9a9e,stroke:#333,stroke-width:2px,color:black
+    
 
 ## 🛠️ Tech Stack
 I chose these specific tools to optimize for latency (speed) and accent recognition (Indian context).
